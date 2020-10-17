@@ -1,74 +1,134 @@
-//todo 3 tables mainindex todownload table and tofindhash table when removed from tofindhash table add to todownload table 
-//gets titels of recent dv relases and adds it to db if its not already there and if its there just skip
-const puppeteer = require('puppeteer')
-const screenshot = 'youtube_fm_dreams_video.png'
+const puppeteer = require('puppeteer-extra')
 const $ = require('cheerio');
-const mysql = require('mysql');
-const con = mysql.createConnection({
-  host: "localhost",
-  user: "foo",
-  password: "bar",
-  database: "movie"
-});
-con.connect(function (err) {
-  if (err) throw err;
-  console.log("Connected!");
-});
+const StealthPlugin = require('puppeteer-extra-plugin-stealth')
+const controller = require('./controller')
+puppeteer.use(StealthPlugin())
+//todo fix normal browser usage
+const options = {
+
+  headless: true,
+  ignoreHTTPSErrors: true,
+  userDataDir: './tmp'
+};
+function scrapeMovieDataRT(url) {
+  return new Promise(resolve => {
+    let sendjson = { "image": "", "genarr": [] ,"name":"","moviedataurl":""}
+    let genrearray = ["music", "musical", "comedy", "western", "drama", "sci", "mystery", "thriller", "fantasy", "romance", "horror", "kid", "documentary", "animated", "action", "adventure"]
+    //console.log(await page.content())
+    $('div', url).each(function () {
+      //look if its already added if not then add it to 
+      //console.log($(this).attr().class)
+      if ($(this).attr().class == "meta-value genre") {
+
+        //resolve($(this).attr().src)
 
 
-try {
-  (async () => {
-    const browser = await puppeteer.launch()
+        let genrestring = $(this).text()
+        genrearray = genrearray.map(function (genre, index) {
+
+
+          if (genrestring.includes(genre)) {
+
+            return index
+          }
+
+        })
+        genrearray = genrearray.filter(x => x);
+        
+        sendjson.genarr = genrearray
+      }
+
+    });
+
+    $('img', url).each(function () {
+      //look if its already added if not then add it to 
+      //console.log($(this).attr().class)
+      if ($(this).attr().class == "posterImage js-lazyLoad") {
+
+        sendjson.image = $(this).attr().src
+
+      }
+
+    });
+    $('h1', url).each(function () {
+      //look if its already added if not then add it to 
+      //console.log($(this).attr().class)
+      if ($(this).attr().class == "mop-ratings-wrap__title mop-ratings-wrap__title--top") {
+        sendjson.name =$(this).text()
+      }
+
+    });
+    resolve(sendjson)
+
+
+
+  });
+}
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+function scrapeMovieLinks(url) {
+  return new Promise(resolve => {
+    let everyother = true
+    let resolvearray = []
+    $('a[href]', url).each(function () {
+
+      let urltocheck = $(this).attr('href')
+      if (urltocheck.includes("/m/")) {
+        if (everyother == true) {
+          resolvearray.push(urltocheck)
+          everyother = false
+        }
+        else {
+          everyother = true
+        }
+      }
+      //resolve($(this).text())
+
+
+    });
+
+    resolve(resolvearray)
+
+
+  });
+
+
+}
+async function startscrape() {
+
+  puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'] }).then(async browser => {
     const page = await browser.newPage()
     await page.goto("https://www.rottentomatoes.com/browse/top-dvd-streaming")
-    //console.log(await page.content())
-    $('h3', await page.content()).each(function () {
-      //look if its already added if not then add it to 
-
-      getnamefromdb($(this).text())
+    let linkarray = await scrapeMovieLinks(await page.content())
+    let movarray = []
+    let arraylenght = linkarray.length
+    for (var i = 0; i < arraylenght; i++) {
+      let getRandom = getRandomInt(1000, 4000)
+      let url = "https://www.rottentomatoes.com" + linkarray[i]
+      await page.goto(url)
+      await page.waitFor(getRandom)
+      let mov = await scrapeMovieDataRT(await page.content())
+      
+      //upsert here with movieurl and moviedata
+      mov.moviedataurl = url
+      movarray.push(mov)
+     
+    }
+    movarray = movarray.filter(x => x.image);
+    movarray.forEach(element => {
+      console.log("Mov"+JSON.stringify(element));
+      controller.upsert(element)
     });
-  })()
-} catch (err) {
-  console.error(err)
-}
-
-
-
-
-
-function addtomovietable(name) {
-
-  var sql = "INSERT INTO movies (name) VALUES (?)";
-  con.query(sql, [name], function (err, result) {
-    if (err) throw err;
-    console.log("1 record inserted");
-    console.log(result.insertId);
-    AddToScrapeTable(result.insertId)
-  });
+    console.table(linkarray)
+  })
 
 }
-function AddToScrapeTable(id) {
-  var sql = "INSERT INTO nohash (id) VALUES (?)";
-  con.query(sql, [id], function (err, result) {
-    if (err) throw err;
-    console.log("id inserted " + id);
-
-  });
-}
-
-
-function getnamefromdb(name) {
-
-  var sql = 'SELECT * FROM movies WHERE name = ? ';
-  con.query(sql, [name], function (err, result) {
-    if (err) throw err;
-    if (result.length) {
-      console.log("alreadyindb")
-    }
-    else {
-      addtomovietable(name)
-      console.log("addtomovietable")
-    }
-
-  });
+startscrape()
+function getRandomInt(min, max) {
+  let a = Math.floor(Math.random() * Math.floor(max));
+  a = a + min
+  return a
 }

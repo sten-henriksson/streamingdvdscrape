@@ -88,3 +88,5 @@ typings/
 # DynamoDB Local files
 .dynamodb/
 index3.js
+index2.js
+testindex.js
