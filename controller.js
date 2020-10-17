@@ -10,7 +10,7 @@ exports.upsert = async function upsertRow(movieobj) {
             moviedataurl: movieobj.moviedataurl
         }
     });
-    await model.todownload.upsert({
+    await model.nodownload.upsert({
         id:getid.id
     })
     console.log(getid.id);

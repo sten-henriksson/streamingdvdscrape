@@ -47,7 +47,7 @@ const movieList = sequelize.define('movieList', {
     freezeTableName: true
 
 });
-const todownload = sequelize.define('todownload', {
+const nodownload = sequelize.define('nodownload', {
     // Model attributes are defined here
     id: {
         type: Sequelize.INTEGER,
@@ -58,7 +58,7 @@ const todownload = sequelize.define('todownload', {
     freezeTableName: true
 
 });
-todownload.sync({ alter: true })
+nodownload.sync({ alter: true })
 movieList.sync({ alter: true })
 exports.movieList = movieList
-exports.todownload = todownload
+exports.nodownload = nodownload
