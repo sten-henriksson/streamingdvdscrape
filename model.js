@@ -30,7 +30,7 @@ const movieList = sequelize.define('movieList', {
 
     },
     magnet: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
 
     },
     image: {

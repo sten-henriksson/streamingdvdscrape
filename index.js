@@ -2,6 +2,7 @@ const puppeteer = require('puppeteer-extra')
 const $ = require('cheerio');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth')
 const controller = require('./controller')
+var cron = require('node-cron');
 puppeteer.use(StealthPlugin())
 //todo fix normal browser usage
 const options = {
@@ -99,7 +100,7 @@ function scrapeMovieLinks(url) {
 }
 async function startscrape() {
 
-  puppeteer.launch({ headless: false, args: ['--no-sandbox', '--disable-setuid-sandbox'] }).then(async browser => {
+  puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }).then(async browser => {
     const page = await browser.newPage()
     await page.goto("https://www.rottentomatoes.com/browse/top-dvd-streaming")
     let linkarray = await scrapeMovieLinks(await page.content())
@@ -132,3 +133,7 @@ function getRandomInt(min, max) {
   a = a + min
   return a
 }
+
+cron.schedule('*/20 * * * *', () => {
+  startscrape()
+});
