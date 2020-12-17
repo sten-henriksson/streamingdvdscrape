@@ -5,6 +5,7 @@ const controller = require('./controller')
 var cron = require('node-cron');
 puppeteer.use(StealthPlugin())
 //todo fix normal browser usage
+//test
 const options = {
 
   headless: true,
