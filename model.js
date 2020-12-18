@@ -2,7 +2,7 @@
 const colors = require('colors');
 const { Sequelize, DataTypes } = require('sequelize');
 // Option 2: Passing parameters separately (other dialects)
-const sequelize = new Sequelize('movies', 'root', 'root', {
+const sequelize = new Sequelize('movies', 'root', 'stenroot', {
     host: 'localhost',
     dialect: 'mysql',
     logging: msg => console.log(msg.magenta)
@@ -58,7 +58,19 @@ const nodownload = sequelize.define('nodownload', {
     freezeTableName: true
 
 });
+const tostream = sequelize.define('tostream', {
+    // Model attributes are defined here
+    id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: false,
+        primaryKey: true,
+    },
+}, {
+    freezeTableName: true
+
+});
 nodownload.sync({ alter: true })
 movieList.sync({ alter: true })
+tostream.sync({ alter: true })
 exports.movieList = movieList
 exports.nodownload = nodownload

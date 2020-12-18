@@ -103,7 +103,7 @@ async function startscrape() {
 
   puppeteer.launch({ headless: true, args: ['--no-sandbox', '--disable-setuid-sandbox'] }).then(async browser => {
     const page = await browser.newPage()
-    await page.goto("https://www.rottentomatoes.com/browse/top-dvd-streaming")
+    await page.goto("https://www.rottentomatoes.com/top/bestofrt/top_100_animation_movies/")
     let linkarray = await scrapeMovieLinks(await page.content())
     let movarray = []
     let arraylenght = linkarray.length
